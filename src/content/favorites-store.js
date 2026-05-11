@@ -42,10 +42,22 @@ GifFav.store = (function () {
     return 'https://media.giphy.com/media/' + encodeURIComponent(id) + '/giphy.gif';
   }
 
-  // Strip session/tracking params and unwrap Teams/Skype image proxy URLs so the
-  // stored URL never expires. GIPHY's newer media URLs can put tracking data in
-  // the path (/media/v1.../{id}/giphy.gif), so we rebuild them from the GIF ID.
-  function normalizeGifUrl(url) {
+  function mediaTypeForUrl(url) {
+    if (!url) return 'image';
+    var lower = String(url).toLowerCase();
+    if (lower.indexOf('giphy.com') !== -1 ||
+        lower.indexOf('tenor.com') !== -1 ||
+        lower.indexOf('tenor.co') !== -1 ||
+        /\.gif(\?|#|$)/i.test(lower)) {
+      return 'gif';
+    }
+    return 'image';
+  }
+
+  // Strip session/tracking params and unwrap Teams/Skype image proxy URLs so
+  // stored media URLs are stable. GIPHY's newer media URLs can put tracking data
+  // in the path (/media/v1.../{id}/giphy.gif), so we rebuild them from the GIF ID.
+  function normalizeMediaUrl(url) {
     if (!url) return url;
     url = unwrapProxyUrl(url);
     try {
@@ -59,16 +71,24 @@ GifFav.store = (function () {
           u.hostname.includes('tenor.co') || u.hostname.includes('media.tenor')) {
         return u.origin + u.pathname; // strip all query params
       }
+      u.hash = '';
+      return u.toString();
     } catch (_) { /* keep original if URL is malformed */ }
     return url;
   }
 
+  function normalizeGifUrl(url) {
+    return normalizeMediaUrl(url);
+  }
+
   function normalizeEntry(fav) {
-    var cleanUrl = normalizeGifUrl(fav.url || fav.previewUrl || '');
-    var cleanPreviewUrl = normalizeGifUrl(fav.previewUrl || cleanUrl);
+    var cleanUrl = normalizeMediaUrl(fav.url || fav.previewUrl || '');
+    var cleanPreviewUrl = normalizeMediaUrl(fav.previewUrl || cleanUrl);
+    var mediaType = fav.mediaType || mediaTypeForUrl(cleanUrl);
     return Object.assign({}, fav, {
       url: cleanUrl,
       previewUrl: cleanPreviewUrl,
+      mediaType: mediaType,
     });
   }
 
@@ -149,13 +169,13 @@ GifFav.store = (function () {
   }
 
   async function has(url) {
-    var id = await hashUrl(normalizeGifUrl(url));
+    var id = await hashUrl(normalizeMediaUrl(url));
     var items = await migrateStorage(await readStorage());
     return items.some(function (f) { return f.id === id; });
   }
 
   async function add(fav) {
-    // Normalize URL before storing so GIPHY/Tenor session params never expire
+    // Normalize URL before storing so provider session params never expire
     var normalisedFav = normalizeEntry(fav);
     var cleanUrl = normalisedFav.url;
     var id = await hashUrl(cleanUrl);
@@ -166,13 +186,13 @@ GifFav.store = (function () {
   }
 
   async function remove(url) {
-    var id = await hashUrl(normalizeGifUrl(url));
+    var id = await hashUrl(normalizeMediaUrl(url));
     var items = await migrateStorage(await readStorage());
     await writeStorage(items.filter(function (f) { return f.id !== id; }));
   }
 
   async function toggle(fav) {
-    var alreadyFav = await has(normalizeGifUrl(fav.url));
+    var alreadyFav = await has(normalizeMediaUrl(fav.url));
     if (alreadyFav) {
       await remove(fav.url);
       return { added: false };
@@ -208,5 +228,6 @@ GifFav.store = (function () {
     toggle: toggle,
     onChange: onChange,
     normalizeGifUrl: normalizeGifUrl,
+    normalizeMediaUrl: normalizeMediaUrl,
   };
 })();

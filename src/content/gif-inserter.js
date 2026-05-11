@@ -124,7 +124,17 @@ GifFav.inserter = (function () {
       .replace(/^-+|-+$/g, '')
       .slice(0, 48);
 
-    return (safeName || 'teams-gif') + '.' + ext;
+    return (safeName || (fav.mediaType === 'image' ? 'teams-image' : 'teams-gif')) + '.' + ext;
+  }
+
+  function isGifFavorite(fav) {
+    if (fav.mediaType === 'gif') return true;
+    if (fav.mediaType === 'image') return false;
+    var url = GifFav.store.normalizeMediaUrl(fav.url || '');
+    return url.indexOf('giphy.com') !== -1 ||
+      url.indexOf('tenor.com') !== -1 ||
+      url.indexOf('tenor.co') !== -1 ||
+      /\.gif(\?|#|$)/i.test(url);
   }
 
   // Strategy 1: insert <readonly> element directly into the composer DOM.
@@ -132,6 +142,7 @@ GifFav.inserter = (function () {
   // validates URLs through urlp.asm.skype.com and rejects external GIF URLs.
   // CKEditor's MutationObserver upcasts the element to the model, preserving it.
   async function tryDirectInsert(fav, composer) {
+    if (!isGifFavorite(fav)) throw new Error('direct insert is GIF-only');
     var url = GifFav.store.normalizeGifUrl(fav.url);
     var el = buildReadonlyEl(fav, url);
 
@@ -170,7 +181,7 @@ GifFav.inserter = (function () {
   // Strategy 2: fetch blob and paste as a file. This avoids Teams'
   // _handleGiphyOrExternalImages URL-proxy validation entirely.
   async function tryPasteBlob(fav, composer) {
-    var fetchUrl = GifFav.store.normalizeGifUrl(fav.url);
+    var fetchUrl = GifFav.store.normalizeMediaUrl(fav.url);
     var resp = await fetch(fetchUrl, { mode: 'cors', credentials: 'omit' });
     if (!resp.ok) throw new Error('fetch ' + resp.status);
     var blob = await resp.blob();
@@ -197,7 +208,7 @@ GifFav.inserter = (function () {
   // trusted by the browser, so Teams accepts it in more cases than a synthetic
   // ClipboardEvent.
   async function tryCopyClipboard(fav) {
-    var fetchUrl = GifFav.store.normalizeGifUrl(fav.url);
+    var fetchUrl = GifFav.store.normalizeMediaUrl(fav.url);
     try {
       var resp = await fetch(fetchUrl, { mode: 'cors', credentials: 'omit' });
       if (!resp.ok) throw new Error('fetch ' + resp.status);
@@ -205,15 +216,15 @@ GifFav.inserter = (function () {
       var clipboardType = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/gif';
       var clipboardBlob = blob.type === clipboardType ? blob : blob.slice(0, blob.size, clipboardType);
       await navigator.clipboard.write([new ClipboardItem({ [clipboardType]: clipboardBlob })]);
-      showToast('已複製 GIF！請按 Ctrl+V（Mac: Cmd+V）貼到訊息框');
+      showToast('已複製圖片！請按 Ctrl+V（Mac: Cmd+V）貼到訊息框');
     } catch (copyError) {
       console.error('[GifFav] clipboard image copy failed:', copyError);
       try {
         await navigator.clipboard.writeText(fetchUrl);
-        showToast('已複製 GIF 網址！貼上後送出即可顯示 GIF');
+        showToast('已複製圖片網址！貼上後送出即可顯示');
       } catch (e) {
         console.error('[GifFav] clipboard URL copy failed:', e);
-        showToast('無法插入 GIF，請手動複製：' + fetchUrl);
+        showToast('無法插入圖片，請手動複製：' + fetchUrl);
       }
     }
   }
@@ -226,13 +237,15 @@ GifFav.inserter = (function () {
       return;
     }
 
-    // Strategy 1: direct DOM insertion — bypasses paste handler URL validation
-    try {
-      await tryDirectInsert(fav, composer);
-      console.log('[GifFav] direct-insert succeeded');
-      return;
-    } catch (e) {
-      console.warn('[GifFav] direct-insert failed:', e);
+    if (isGifFavorite(fav)) {
+      // Strategy 1: direct DOM insertion — bypasses paste handler URL validation
+      try {
+        await tryDirectInsert(fav, composer);
+        console.log('[GifFav] direct-insert succeeded');
+        return;
+      } catch (e) {
+        console.warn('[GifFav] direct-insert failed:', e);
+      }
     }
 
     // Strategy 2: paste as a file/blob so Teams does not validate the source URL

@@ -64,7 +64,7 @@ GifFav.pickerWatcher = (function () {
     if (favorites.length === 0) {
       var empty = document.createElement('div');
       empty.className = 'gif-fav-empty';
-      empty.textContent = 'Hover 到聊天訊息的 GIF，點星星即可收藏';
+      empty.textContent = 'Hover 到聊天訊息的圖片或 GIF，點星星即可收藏';
       grid.appendChild(empty);
       return;
     }
@@ -72,10 +72,10 @@ GifFav.pickerWatcher = (function () {
       var item = document.createElement('button');
       item.type = 'button';
       item.className = 'gif-fav-item';
-      item.title = fav.alt || 'GIF';
+      item.title = fav.alt || (fav.mediaType === 'image' ? 'Image' : 'GIF');
       var img = document.createElement('img');
       img.src = fav.previewUrl || fav.url;
-      img.alt = fav.alt || 'GIF';
+      img.alt = fav.alt || (fav.mediaType === 'image' ? 'Image' : 'GIF');
       img.loading = 'lazy';
       img.addEventListener('error', function () {
         img.style.display = 'none';
@@ -94,7 +94,7 @@ GifFav.pickerWatcher = (function () {
           closePicker(pickerRoot);
         } catch (e) {
           console.error('[GifFav] favorite insert failed:', e);
-          GifFav.inserter.showToast('無法插入 GIF');
+          GifFav.inserter.showToast('無法插入圖片');
         }
       });
       grid.appendChild(item);

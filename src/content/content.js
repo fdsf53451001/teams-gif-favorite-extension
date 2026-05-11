@@ -17,7 +17,9 @@ var GifFav = GifFav || {};
   function start() {
     GifFav.chatWatcher.init();
     GifFav.pickerWatcher.init();
-    console.log('[GifFav] Teams GIF 我的最愛 已啟動');
+    setTimeout(GifFav.chatWatcher.scan, 1500);
+    setTimeout(GifFav.chatWatcher.scan, 4000);
+    console.log('[GifFav] Teams Media Favorites 已啟動');
   }
 
   // Teams is a SPA — by the time this content script runs, the DOM exists

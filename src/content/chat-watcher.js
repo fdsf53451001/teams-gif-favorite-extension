@@ -32,6 +32,7 @@ GifFav.chatWatcher = (function () {
 
   async function attachStar(el) {
     var isVideo = el.tagName === 'VIDEO';
+    var mediaType = isVideo || GifFav.selectors.isGifImg(el) ? 'gif' : 'image';
 
     // If already injected, re-inject only if the star button was removed (Teams re-render)
     if (el.dataset.gifFavInjected) {
@@ -39,7 +40,7 @@ GifFav.chatWatcher = (function () {
     }
     el.dataset.gifFavInjected = '1';
 
-    var elSrc = el.src || el.getAttribute('src') || '';
+    var elSrc = el.currentSrc || el.src || el.getAttribute('src') || '';
     var isFav = await GifFav.store.has(elSrc);
     if (!el.parentNode) return;
 
@@ -63,13 +64,14 @@ GifFav.chatWatcher = (function () {
     btn.addEventListener('click', async function (e) {
       e.preventDefault();
       e.stopPropagation();
-      var src = el.src || el.getAttribute('src') || '';
+      var src = el.currentSrc || el.src || el.getAttribute('src') || '';
       var fav = {
         url: src,
         previewUrl: src,
+        mediaType: mediaType,
         width: (isVideo ? el.videoWidth : el.naturalWidth) || el.width || 0,
         height: (isVideo ? el.videoHeight : el.naturalHeight) || el.height || 0,
-        alt: el.alt || 'GIF',
+        alt: el.alt || (mediaType === 'gif' ? 'GIF' : 'Image'),
       };
       var result = await GifFav.store.toggle(fav);
       setStarState(btn, result.added);
@@ -85,14 +87,14 @@ GifFav.chatWatcher = (function () {
 
   function processNode(node) {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
-    if (node.tagName === 'IMG' && GifFav.selectors.isGifImg(node)) {
+    if (node.tagName === 'IMG' && GifFav.selectors.isImageImg(node)) {
       tryAttach(node);
     }
     if (node.tagName === 'VIDEO' && GifFav.selectors.isGifVideo(node)) {
       tryAttach(node);
     }
     node.querySelectorAll('img, video').forEach(function (el) {
-      if (el.tagName === 'IMG' && GifFav.selectors.isGifImg(el)) tryAttach(el);
+      if (el.tagName === 'IMG' && GifFav.selectors.isImageImg(el)) tryAttach(el);
       if (el.tagName === 'VIDEO' && GifFav.selectors.isGifVideo(el)) tryAttach(el);
     });
   }
@@ -105,10 +107,10 @@ GifFav.chatWatcher = (function () {
           processNode(record.addedNodes[j]);
         }
       } else if (record.type === 'attributes') {
-        // Teams lazy-loads GIF src — img/video added with empty src then src is set later.
-        // Watch attribute changes so the star appears as soon as the real URL is set.
+        // Teams lazy-loads media src/srcset — element can appear before the real
+        // URL is set, so watch attributes until the image is usable.
         var target = record.target;
-        if (target.tagName === 'IMG' && GifFav.selectors.isGifImg(target)) tryAttach(target);
+        if (target.tagName === 'IMG' && GifFav.selectors.isImageImg(target)) tryAttach(target);
         if (target.tagName === 'VIDEO' && GifFav.selectors.isGifVideo(target)) tryAttach(target);
       }
     }
@@ -116,7 +118,7 @@ GifFav.chatWatcher = (function () {
 
   function init() {
     document.querySelectorAll('img, video').forEach(function (el) {
-      if (el.tagName === 'IMG' && GifFav.selectors.isGifImg(el)) tryAttach(el);
+      if (el.tagName === 'IMG' && GifFav.selectors.isImageImg(el)) tryAttach(el);
       if (el.tagName === 'VIDEO' && GifFav.selectors.isGifVideo(el)) tryAttach(el);
     });
 
@@ -125,7 +127,7 @@ GifFav.chatWatcher = (function () {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['src'],
+      attributeFilter: ['src', 'srcset'],
     });
   }
 
@@ -133,5 +135,25 @@ GifFav.chatWatcher = (function () {
     if (observer) { observer.disconnect(); observer = null; }
   }
 
-  return { init: init, destroy: destroy };
+  function scan() {
+    document.querySelectorAll('img, video').forEach(function (el) {
+      if (el.tagName === 'IMG' && GifFav.selectors.isImageImg(el)) tryAttach(el);
+      if (el.tagName === 'VIDEO' && GifFav.selectors.isGifVideo(el)) tryAttach(el);
+    });
+  }
+
+  function debugImages() {
+    return Array.from(document.querySelectorAll('img')).map(function (img, index) {
+      var info = GifFav.selectors.explainImage(img);
+      info.index = index;
+      info.injected = !!img.dataset.gifFavInjected;
+      info.alt = img.alt || '';
+      return info;
+    });
+  }
+
+  window.__gifFavScan = scan;
+  window.__gifFavDebugImages = debugImages;
+
+  return { init: init, destroy: destroy, scan: scan, debugImages: debugImages };
 })();
