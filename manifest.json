@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Teams GIF 我的最愛",
+  "name": "Teams GIF Favorites",
   "version": "0.1.2",
-  "description": "在 Microsoft Teams 網頁版加入 GIF 我的最愛功能，類似 Discord 的收藏體驗",
+  "description": "Add a local GIF favorites panel to Microsoft Teams on the web.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://teams.microsoft.com/*",
