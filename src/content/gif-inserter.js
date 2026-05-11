@@ -108,6 +108,25 @@ GifFav.inserter = (function () {
     return el;
   }
 
+  function gifFileName(fav, ext) {
+    var source = fav.alt || '';
+    try {
+      var url = GifFav.store.normalizeGifUrl(fav.url);
+      var parts = new URL(url).pathname.split('/').filter(Boolean);
+      var mediaIndex = parts.indexOf('media');
+      if (mediaIndex !== -1 && parts[mediaIndex + 1]) source = parts[mediaIndex + 1];
+    } catch (_) { /* keep alt/default */ }
+
+    var safeName = source
+      .toLowerCase()
+      .replace(/\.[a-z0-9]+$/i, '')
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48);
+
+    return (safeName || 'teams-gif') + '.' + ext;
+  }
+
   // Strategy 1: insert <readonly> element directly into the composer DOM.
   // Bypasses CKEditor's paste handler (_handleGiphyOrExternalImages) which
   // validates URLs through urlp.asm.skype.com and rejects external GIF URLs.
@@ -157,10 +176,9 @@ GifFav.inserter = (function () {
     var blob = await resp.blob();
     var fileType = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/gif';
     var ext = fileType === 'image/gif' ? 'gif' : fileType.split('/')[1] || 'gif';
-    var file = new File([blob], 'favorite.' + ext, { type: fileType });
+    var file = new File([blob], gifFileName(fav, ext), { type: fileType });
     var dt = new DataTransfer();
     dt.items.add(file);
-    dt.setData('text/plain', file.name);
 
     if (dt.files.length === 0 || dt.items.length === 0) {
       throw new Error('DataTransfer is empty after adding GIF file');

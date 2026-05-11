@@ -15,12 +15,15 @@ GifFav.pickerWatcher = (function () {
   }
 
   function closePicker(pickerRoot) {
-    ['keydown', 'keyup'].forEach(function (type) {
-      pickerRoot.dispatchEvent(new KeyboardEvent(type, {
-        key: 'Escape', code: 'Escape', keyCode: 27,
-        bubbles: true, cancelable: true,
-      }));
-    });
+    var closeButton = pickerRoot.querySelector(
+      'button[aria-label="Close"], button[aria-label="關閉"], button[aria-label="关闭"], button[title="Close"]'
+    );
+    if (!closeButton) {
+      closeButton = document.querySelector(
+        'button[aria-label="Close"], button[aria-label="關閉"], button[aria-label="关闭"], button[title="Close"]'
+      );
+    }
+    if (closeButton) closeButton.click();
   }
 
   function hideEl(el) {
@@ -86,10 +89,9 @@ GifFav.pickerWatcher = (function () {
         if (item.dataset.gifFavBusy) return;
         item.dataset.gifFavBusy = '1';
         item.style.opacity = '0.5';
-        // Close picker first so the compose box can receive focus before insertion
-        closePicker(pickerRoot);
         try {
           await GifFav.inserter.insert(fav);
+          closePicker(pickerRoot);
         } catch (e) {
           console.error('[GifFav] favorite insert failed:', e);
           GifFav.inserter.showToast('無法插入 GIF');
