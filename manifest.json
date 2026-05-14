@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Teams Media Favorites",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Add a local image and GIF favorites panel to Microsoft Teams on the web.",
   "permissions": ["storage"],
   "host_permissions": [

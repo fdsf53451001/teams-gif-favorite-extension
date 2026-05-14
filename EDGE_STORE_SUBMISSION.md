@@ -4,9 +4,9 @@ Use this file as the working copy for Partner Center fields.
 
 ## Package
 
-- Upload package: `dist/teams-media-favorites-edge-0.2.0.zip`
+- Upload package: `dist/teams-media-favorites-edge-0.2.2.zip`
 - Manifest version: MV3
-- Extension version: `0.2.0`
+- Extension version: `0.2.2`
 - Visibility: Public
 - Markets: All markets
 - Category: Productivity
@@ -32,7 +32,7 @@ Add a local image and GIF favorites panel to Microsoft Teams on the web.
 
 Teams Media Favorites adds a lightweight favorites workflow to Microsoft Teams on the web. When you hover over an image or GIF in a Teams chat, a star button appears so you can save or remove that media item from your local favorites. The extension also adds a Favorites entry inside the Teams picker, making it easier to find and reuse images and GIFs you commonly send.
 
-Favorites are stored locally in your browser with Chrome/Edge extension storage. The extension does not run analytics, does not send your favorites to a developer server, and does not load remote JavaScript. It uses access to Teams pages to add the star buttons and picker panel, and it uses Microsoft 365 media, GIPHY, and Tenor host access only to preview or fetch media that you choose to save or insert.
+Favorites are stored with Chrome/Edge extension storage and can sync across devices through the browser's extension sync service when browser sync is enabled. To avoid broken previews when Teams media URLs expire, the extension may also keep compressed local copies of saved images and small Teams-hosted GIFs in browser local extension storage on the current device. The extension does not run analytics, does not send your favorites to a developer server, and does not load remote JavaScript. It uses access to Teams pages to add the star buttons and picker panel, and it uses Microsoft 365 media, GIPHY, and Tenor host access only to preview or fetch media that you choose to save or insert.
 
 This extension is intended for Microsoft Teams in the browser. It does not support the native Teams desktop application because browser extensions cannot inject into that app.
 
@@ -51,11 +51,11 @@ Microsoft Teams, image, GIF, favorites, GIPHY, Tenor, productivity, chat
 
 ### Single Purpose
 
-The extension adds a local image and GIF favorites feature to Microsoft Teams on the web. It lets users save image or GIF URLs from Teams chats, view those saved items in a custom Favorites panel inside the Teams picker, and insert a selected saved item back into the message composer.
+The extension adds a local image and GIF favorites feature to Microsoft Teams on the web. It lets users save image or GIF favorites from Teams chats, view those saved items in a custom Favorites panel inside the Teams picker, remove individual saved items or clear all saved items, and insert a selected saved item back into the message composer.
 
 ### Permission Justification
 
-`storage`: Required to save and sync the user's media favorites list locally across Teams tabs in the same browser profile.
+`storage`: Required to save the user's media favorites list, store local cached media copies on the current device, sync metadata across Teams tabs, and sync favorite metadata across devices through the browser's extension sync service when browser sync is enabled.
 
 Host access for `teams.microsoft.com` and `teams.live.com`: Required so the content script can run only on Microsoft Teams web pages, add star buttons to image and GIF messages, and add the Favorites panel to the Teams picker.
 
@@ -69,7 +69,7 @@ No. The extension does not load or execute remotely hosted code. All JavaScript 
 
 ### Data Usage
 
-The extension stores image and GIF favorite metadata locally in the browser. This includes media URLs, preview URLs, dimensions, media type, alt text when available, a generated local identifier, and a timestamp. The extension does not collect or transmit this data to a developer-operated server.
+The extension stores image and GIF favorite metadata in browser extension storage. This includes media URLs, preview URLs, dimensions, media type, alt text when available, a generated local identifier, and a timestamp. When browser sync is enabled, the browser may sync this metadata across the user's signed-in devices. The extension may also store compressed image previews and small Teams-hosted GIF copies in local browser extension storage on the current device so saved items remain available when temporary Teams URLs expire. The extension does not collect or transmit this data to a developer-operated server.
 
 The extension reads image and GIF elements on Teams pages only to detect supported media, show the star button, and save the selected item. It does not collect chat messages, contacts, account identifiers, passwords, payment information, health information, or location information.
 

@@ -145,6 +145,34 @@
   pointer-events: none;
 }
 
+.gif-fav-item-star {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  opacity: 0.95;
+}
+
+.gif-fav-item-star:hover {
+  background: rgba(0, 0, 0, 0.78);
+  transform: scale(1.08);
+}
+
+.gif-fav-item-star:active {
+  transform: scale(0.94);
+}
+
 .gif-fav-empty {
   grid-column: 1 / -1;
   text-align: center;
@@ -165,6 +193,42 @@
   background: rgba(128, 128, 128, 0.15);
   color: currentColor;
   user-select: none;
+}
+
+.gif-fav-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 2px;
+}
+
+.gif-fav-clear {
+  min-height: 28px;
+  max-width: 100%;
+  border: 1px solid rgba(120, 120, 120, 0.35);
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.08);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 6px 10px;
+  box-sizing: border-box;
+}
+
+.gif-fav-clear:hover {
+  background: rgba(128, 128, 128, 0.16);
+}
+
+.gif-fav-clear[data-gif-fav-confirm="1"] {
+  border-color: rgba(196, 49, 75, 0.55);
+  color: #c4314b;
+}
+
+.gif-fav-clear:disabled {
+  cursor: default;
+  opacity: 0.65;
 }
 
 /* ── Toast notification ── */

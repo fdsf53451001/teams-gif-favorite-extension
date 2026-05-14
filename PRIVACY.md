@@ -4,7 +4,7 @@ Teams Media Favorites is a browser extension that adds a local image and GIF fav
 
 ## Data Stored by the Extension
 
-The extension stores image and GIF favorite records locally in the browser by using `chrome.storage.local`. A favorite record can include:
+The extension stores image and GIF favorite records in browser extension storage. A favorite record can include:
 
 - The image or GIF URL.
 - A preview URL.
@@ -13,7 +13,9 @@ The extension stores image and GIF favorite records locally in the browser by us
 - The media type when available.
 - A generated local identifier and timestamp.
 
-This data stays on the user's device through the browser's extension storage.
+This metadata is stored through the browser's extension storage. When browser extension sync is enabled for the user's browser profile, favorite metadata may sync across devices through the browser vendor's sync service.
+
+To keep saved Teams media available after temporary Teams URLs expire, the extension may also store compressed image copies and small Teams-hosted GIF copies in local browser extension storage on the current device. These local cached media copies are not sent to a developer-operated server.
 
 ## Data Collection
 
@@ -38,7 +40,7 @@ The extension does not load or execute remotely hosted code. All executable Java
 
 ## User Control
 
-Users can remove saved favorites by clicking the star button again on a saved image or GIF. Users can also remove all extension data by uninstalling the extension or clearing the extension's site/storage data in the browser.
+Users can remove saved favorites by clicking the star button again on a saved image or GIF, by clicking the star button inside the Favorites panel, or by using the clear-all button in the Favorites panel. Users can also remove all extension data by uninstalling the extension or clearing the extension's site/storage data in the browser.
 
 ## Contact
 

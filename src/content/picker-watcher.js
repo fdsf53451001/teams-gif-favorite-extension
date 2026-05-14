@@ -74,17 +74,66 @@ GifFav.pickerWatcher = (function () {
       item.className = 'gif-fav-item';
       item.title = fav.alt || (fav.mediaType === 'image' ? 'Image' : 'GIF');
       var img = document.createElement('img');
-      img.src = fav.previewUrl || fav.url;
       img.alt = fav.alt || (fav.mediaType === 'image' ? 'Image' : 'GIF');
       img.loading = 'lazy';
-      img.addEventListener('error', function () {
+      var fallbackSrc = fav.previewUrl || fav.url;
+      var brokenShown = false;
+      function showBroken() {
+        if (brokenShown) return;
+        brokenShown = true;
         img.style.display = 'none';
         var placeholder = document.createElement('div');
         placeholder.className = 'gif-fav-broken';
         placeholder.textContent = '?';
         item.appendChild(placeholder);
+      }
+      img.addEventListener('error', function () {
+        showBroken();
+      });
+      img.addEventListener('load', function () {
+        if (!fav.localCache &&
+            (fav.mediaType === 'image' ||
+             (fav.mediaType === 'gif' && !GifFav.store.isStableGifProviderUrl(fav.url)))) {
+          GifFav.store.ensureCachedMedia(fav).catch(function (e) {
+            console.warn('[GifFav] lazy local cache failed:', e);
+          });
+        }
+      });
+      GifFav.store.getCachedMediaDataUrl(fav).then(function (cachedSrc) {
+        img.src = cachedSrc || fallbackSrc;
+      }).catch(function () {
+        img.src = fallbackSrc;
       });
       item.appendChild(img);
+
+      var removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'gif-fav-item-star is-fav';
+      removeButton.setAttribute('aria-label', '從我的最愛移除');
+      removeButton.setAttribute('title', '從我的最愛移除');
+      removeButton.innerHTML =
+        '<svg viewBox="0 0 24 24" width="15" height="15" fill="#FFD700" xmlns="http://www.w3.org/2000/svg">' +
+          '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>' +
+        '</svg>';
+      removeButton.addEventListener('click', async function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (removeButton.dataset.gifFavBusy) return;
+        removeButton.dataset.gifFavBusy = '1';
+        item.style.opacity = '0.45';
+        try {
+          await GifFav.store.remove(fav.url);
+          item.remove();
+          var remaining = await GifFav.store.list();
+          if (remaining.length === 0) renderFavGrid(grid, [], pickerRoot);
+        } catch (err) {
+          console.error('[GifFav] remove favorite failed:', err);
+          item.style.opacity = '';
+          delete removeButton.dataset.gifFavBusy;
+        }
+      });
+      item.appendChild(removeButton);
+
       item.addEventListener('click', async function () {
         if (item.dataset.gifFavBusy) return;
         item.dataset.gifFavBusy = '1';
@@ -92,12 +141,54 @@ GifFav.pickerWatcher = (function () {
         try {
           await GifFav.inserter.insert(fav);
           closePicker(pickerRoot);
+          setTimeout(GifFav.inserter.focusComposerEnd, 80);
+          setTimeout(GifFav.inserter.focusComposerEnd, 250);
         } catch (e) {
           console.error('[GifFav] favorite insert failed:', e);
           GifFav.inserter.showToast('無法插入圖片');
         }
       });
       grid.appendChild(item);
+    });
+
+    var actions = document.createElement('div');
+    actions.className = 'gif-fav-actions';
+    var clearButton = document.createElement('button');
+    clearButton.type = 'button';
+    clearButton.className = 'gif-fav-clear';
+    clearButton.textContent = '清空我的最愛';
+    clearButton.title = '清空所有收藏';
+    actions.appendChild(clearButton);
+    grid.appendChild(actions);
+
+    var confirmTimer = null;
+    clearButton.addEventListener('click', async function () {
+      if (clearButton.dataset.gifFavConfirm !== '1') {
+        clearButton.dataset.gifFavConfirm = '1';
+        clearButton.textContent = '再點一次清空';
+        if (confirmTimer) clearTimeout(confirmTimer);
+        confirmTimer = setTimeout(function () {
+          delete clearButton.dataset.gifFavConfirm;
+          clearButton.textContent = '清空我的最愛';
+        }, 3500);
+        return;
+      }
+
+      if (confirmTimer) clearTimeout(confirmTimer);
+      clearButton.disabled = true;
+      clearButton.textContent = '清空中...';
+      try {
+        await GifFav.store.clearAll();
+        renderFavGrid(grid, [], pickerRoot);
+      } catch (e) {
+        console.error('[GifFav] clear favorites failed:', e);
+        clearButton.disabled = false;
+        clearButton.textContent = '清空失敗';
+        setTimeout(function () {
+          clearButton.textContent = '清空我的最愛';
+          delete clearButton.dataset.gifFavConfirm;
+        }, 2000);
+      }
     });
   }
 
