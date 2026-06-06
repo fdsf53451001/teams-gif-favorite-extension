@@ -1,57 +1,57 @@
 # Teams Media Favorites
 
-在 Microsoft Teams 網頁版加入類似 Discord 的 **圖片 / GIF 我的最愛**功能。
+Adds Discord-style **image / GIF favorites** to Microsoft Teams on the web.
 
-## 功能
+## Features
 
-| 功能 | 說明 |
+| Feature | Description |
 |---|---|
-| ⭐ 聊天收藏 | 滑鼠移到聊天訊息中的圖片或 GIF，右上角出現星星按鈕，點一下加入最愛，再點取消 |
-| 🗂 Picker 整合 | 點 GIF 按鈕開啟 Teams 內建 picker，分類頁第一格即為「我的最愛」 |
-| 🖼 本機快取 | Teams 圖片會壓縮成本機副本，避免原始短效網址過期後變成問號 |
-| 🔄 即時同步 | 多個分頁同時開啟 Teams，收藏狀態自動同步；同一瀏覽器帳號登入的裝置會透過 Edge/Chrome extension sync 同步 |
+| ⭐ Chat favorites | Hover over an image or GIF in a chat message and a star button appears in the top-right corner — click to add to favorites, click again to remove |
+| 🗂 Picker integration | Click the GIF button to open Teams' built-in picker; the first category tab is "Favorites" |
+| 🖼 Local cache | Teams images are compressed into a local copy, so they don't turn into broken links once the original short-lived URLs expire |
+| 🔄 Live sync | With Teams open in multiple tabs, favorite state syncs automatically; devices signed into the same browser account sync via Edge/Chrome extension sync |
 
-## 安裝
+## Installation
 
-1. 下載或 clone 此資料夾
-2. 打開 Edge：`edge://extensions/`　或 Chrome：`chrome://extensions/`
-3. 開啟右上角「開發人員模式」
-4. 點「載入未封裝項目」→ 選擇本資料夾（`teams-gif-favorite-extension/`）
-5. 打開 [teams.microsoft.com](https://teams.microsoft.com) 或 [teams.live.com](https://teams.live.com)
+1. Download or clone this folder
+2. Open Edge: `edge://extensions/` or Chrome: `chrome://extensions/`
+3. Enable "Developer mode" in the top-right corner
+4. Click "Load unpacked" → select this folder (`teams-gif-favorite-extension/`)
+5. Open [teams.microsoft.com](https://teams.microsoft.com) or [teams.live.com](https://teams.live.com)
 
-## 使用方式
+## Usage
 
-### 收藏圖片或 GIF
-1. 在任一聊天中，滑鼠移到別人傳的圖片或 GIF 上
-2. 右上角出現 ☆ 星星按鈕 → 點一下變成 ★（已收藏）
-3. 再點一下取消收藏
+### Favoriting an image or GIF
+1. In any chat, hover over an image or GIF someone sent
+2. A ☆ star button appears in the top-right corner → click it to turn it into ★ (favorited)
+3. Click again to remove it from favorites
 
-### 使用我的最愛
-1. 點訊息輸入列的 GIF 按鈕（笑臉/貼圖圖示）
-2. 切到 **GIFs** 分頁
-3. 分類頁第一格是 ⭐ **我的最愛**
-4. 點進去 → 看到所有收藏的圖片與 GIF → 點一下即插入訊息輸入框
+### Using your favorites
+1. Click the GIF button in the message compose bar (the smiley / sticker icon)
+2. Switch to the **GIFs** tab
+3. The first category cell is ⭐ **Favorites**
+4. Open it → see all your favorited images and GIFs → click one to insert it into the compose box
 
-## 已知限制
+## Known limitations
 
-- **Teams 桌面 App 不支援**（瀏覽器擴充功能無法注入 Teams 原生 App）
-- 靜態圖片會在本機儲存壓縮副本；Teams/附件 GIF 會在 2MB 內保存原始動畫；GIPHY / Tenor 仍優先使用穩定網址
-- 跨裝置同步依賴瀏覽器的 extension sync；同步的是收藏清單，壓縮圖片副本只保存在目前裝置
-- 若 sync 空間不足，收藏清單會自動退回本機儲存
-- 若 Teams 改版改動 DOM 結構，可能需要更新 `src/content/selectors.js` 內的 selector
-- 圖片 / GIF 插入策略依 Teams 版本而定，若自動插入失敗，會自動複製圖片到剪貼簿並提示手動貼上
+- **The Teams desktop app is not supported** (a browser extension cannot inject into the native Teams app)
+- Static images are stored as a compressed local copy; Teams / attachment GIFs keep their original animation when under 2MB; GIPHY / Tenor still prefer their stable URLs
+- Cross-device sync relies on the browser's extension sync; only the favorites list is synced — compressed image copies are kept only on the current device
+- If sync storage runs out, the favorites list automatically falls back to local storage
+- If a Teams update changes the DOM structure, you may need to update the selectors in `src/content/selectors.js`
+- The image / GIF insertion strategy depends on the Teams version; if automatic insertion fails, the image is copied to the clipboard automatically with a prompt to paste it manually
 
-## 排除問題
+## Troubleshooting
 
-打開 DevTools（F12）→ Console，過濾 `[GifFav]` 可看到除錯訊息。
+Open DevTools (F12) → Console and filter by `[GifFav]` to see debug messages.
 
-若收藏的圖片或 GIF 未顯示 / 星星未出現，可能是 Teams 更新後 selector 失效。請在 DevTools Console 執行：
+If a favorited image or GIF doesn't show up / the star doesn't appear, a Teams update may have broken the selectors. Run this in the DevTools Console:
 
 ```js
-// 確認 content script 有載入
+// Check that the content script is loaded
 window.GifFav
 ```
 
-若回傳 `undefined`，代表 content script 未載入，請確認擴充功能已啟用且網域符合。
+If it returns `undefined`, the content script isn't loaded — make sure the extension is enabled and the domain matches.
 
-若有 `GifFav` 物件但星星不出現，表示 selector 失效，請在 Teams 聊天頁 inspect 圖片 `<img>` 元素，找出其 src 格式並更新 `selectors.js` 的 `isImageImg` 函式。
+If the `GifFav` object exists but the star doesn't appear, the selectors are broken. Inspect an image `<img>` element on a Teams chat page, find its `src` format, and update the `isImageImg` function in `selectors.js`.
